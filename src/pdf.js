@@ -64,6 +64,9 @@ export const sanitizeForPagedJs = (html, extraSelectors = []) => {
  * @property {string} [css] 額外 @page / 中文書 typography CSS 字串
  * @property {string[]} [extraSanitizeSelectors] 要從 HTML 移除的額外 selector
  * @property {(done: number, total: number) => void} [onProgress] paged.js 排版進度
+ * @property {string} [dividerSelector] divider 頁的 CSS selector (預設 ".cjk-book-page--divider")
+ * @property {string} [pageNumberClass] 頁碼 div 的 class name (預設 "cjk-book-page-number")
+ * @property {boolean} [skipFirstPageNumber=true] 第一頁 (封面) 是否跳過頁碼
  */
 
 /**
@@ -75,7 +78,14 @@ export const sanitizeForPagedJs = (html, extraSelectors = []) => {
  * @returns {Promise<{ pages: number }>}
  */
 export const renderPdfPreview = async (html, opts) => {
-  const { container, css, extraSanitizeSelectors } = opts;
+  const {
+    container,
+    css,
+    extraSanitizeSelectors,
+    dividerSelector = ".cjk-book-page--divider",
+    pageNumberClass = "cjk-book-page-number",
+    skipFirstPageNumber = true,
+  } = opts;
   if (!container) throw new Error("renderPdfPreview: container required");
 
   await ensurePagedJs();
@@ -95,9 +105,9 @@ export const renderPdfPreview = async (html, opts) => {
 
   await window.PagedPolyfill.preview(wrapper, stylesheets, container);
 
-  // 後處理：頁碼 + divider 上下置中
-  stampPageNumbers(container);
-  centerDividerPages(container);
+  // 後處理：頁碼 + divider 上下置中（selector 可被 caller 覆寫）
+  stampPageNumbers(container, { className: pageNumberClass, skipFirst: skipFirstPageNumber });
+  centerDividerPages(container, { selector: dividerSelector });
 
   container.scrollTop = 0;
   return { pages: container.querySelectorAll(".pagedjs_page").length };
@@ -107,15 +117,21 @@ export const renderPdfPreview = async (html, opts) => {
  * paged.js v0.4.x 不能用 @bottom-center counter(page) (會炸 item doesn't
  * belong to list)，所以頁碼用 DOM 後處理：每張 .pagedjs_page 加一個 abspos
  * div 在底部置中，封面 (page 1) 不放
+ *
  * @param {HTMLElement} container
+ * @param {Object} [opts]
+ * @param {string} [opts.className="cjk-book-page-number"] 頁碼 div 的 class
+ * @param {boolean} [opts.skipFirst=true] 第一頁 (封面) 是否跳過
  */
-export const stampPageNumbers = (container) => {
+export const stampPageNumbers = (container, opts = {}) => {
+  const className = opts.className || "cjk-book-page-number";
+  const skipFirst = opts.skipFirst ?? true;
   const pages = container.querySelectorAll(".pagedjs_page");
   pages.forEach((p, i) => {
-    if (i === 0) return; // 封面不放
-    if (p.querySelector(".cjk-book-page-number")) return;
+    if (skipFirst && i === 0) return;
+    if (p.querySelector(`.${className}`)) return; // 已加過
     const num = document.createElement("div");
-    num.className = "cjk-book-page-number";
+    num.className = className;
     num.textContent = String(i + 1);
     num.setAttribute("aria-hidden", "true");
     const pagebox = p.querySelector(".pagedjs_pagebox") || p;
@@ -129,12 +145,16 @@ export const stampPageNumbers = (container) => {
 /**
  * paged.js 用 CSS multi-column 把內容塞進 .pagedjs_page_content，並在中間
  * 自動加 anonymous div(display: block)，flex 鏈完全斷掉、CSS 怎麼加都不能
- * 讓 .cjk-book-page--divider 上下置中。改 post-process。
+ * 讓 divider 上下置中。改 post-process。
+ *
  * @param {HTMLElement} container
+ * @param {Object} [opts]
+ * @param {string} [opts.selector=".cjk-book-page--divider"] divider chapter selector
  */
-export const centerDividerPages = (container) => {
+export const centerDividerPages = (container, opts = {}) => {
+  const selector = opts.selector || ".cjk-book-page--divider";
   container.querySelectorAll(".pagedjs_page").forEach((p) => {
-    const divider = p.querySelector(".cjk-book-page--divider");
+    const divider = p.querySelector(selector);
     if (!divider) return;
     const pageContent = p.querySelector(".pagedjs_page_content");
     if (!pageContent) return;

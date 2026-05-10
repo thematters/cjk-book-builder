@@ -1,6 +1,6 @@
 {
   "name": "@thematters/cjk-book-builder",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "中文書版心 client-side PDF (paged.js) + EPUB 3 builder. 把任意 HTML 內容變成中文版心的「書」，同時支援 PDF 與 EPUB 兩種輸出。",
   "license": "MIT",
   "type": "module",
