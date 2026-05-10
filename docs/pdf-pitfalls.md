@@ -143,34 +143,35 @@ const centerDividerPages = (container) => {
 
 ---
 
-## 8. 列印時 @page margin 雙重宣告 — 否則右側被切 / 下緣被吃
+## 8. 列印時 @page margin — 雙重需求衝突
 
 **症狀 A：** 列印 PDF 第 5 頁起右側內容被裁。  
-**症狀 B：** 修了 A 之後，長文章末尾整段消失。
+**症狀 B：** 修了 A 之後，長文章末尾整段消失。  
+**症狀 C：** 修了 B 之後 (用 @media print { @page margin: 0 })，預覽 + 列印兩邊都變成「內文邊到邊、無邊距」。
 
-**原因：** paged.js 跟瀏覽器列印引擎都讀同一個 `@page` margin。
-- 如果 margin 留著 → paged.js page (148mm) 印到 A5 內 116mm 的可印區域 → 右側 32mm 被切
-- 如果 margin: 0 + 自己加 padding → paged.js 不知道 padding 存在，把整本 A5 塞滿，超出 padding 下緣 22mm 被 clip
+**原因：** paged.js 跟瀏覽器列印引擎都讀 `@page` margin，但需求矛盾：
+- paged.js 要 margin 來算 `.pagedjs_page_content` 內容區
+- 印表機看到 margin 會在 paged.js 已經是完整 A5 的頁上再加邊界
 
-**正解：** 用 `@media print` 把兩個分開宣告：
+直接寫 `@media print { @page { margin: 0 } }` 在同一份 stylesheet 也不行
+（見 pitfall #10）— paged.js 會把它當特殊規則拿來用，預覽也變 margin: 0。
 
-```css
-/* 預設 — paged.js 讀這個排版 */
-@page {
-  size: A5 portrait;
-  margin: 18mm 16mm 22mm;
-}
+**正解：** 兩條 @page rule 分到兩份 stylesheet：
 
-/* @media print — 列印引擎讀這個 (不再多加 margin) */
-@media print {
-  @page {
-    size: A5 portrait;
-    margin: 0;
-  }
-}
+```js
+// data: URL stylesheet 給 paged.js (只放預設 @page)
+await window.PagedPolyfill.preview(content, [
+  `data:text/css,@page { size: A5 portrait; margin: 18mm 16mm 22mm; }`
+], target);
+
+// document <style> 給印表機 (paged.js 不掃 document.styleSheets)
+const printStyle = document.createElement("style");
+printStyle.textContent = `@media print { @page { size: A5 portrait; margin: 0; } }`;
+document.head.appendChild(printStyle);
 ```
 
-paged.js 只看預設 @page (它在排版時 evaluate 的是 screen media)，瀏覽器列印引擎會用 @media print 的覆寫。
+`@thematters/cjk-book-builder` 的 `styles/pdf.css` 已經幫你處理好預設那條，
+但 caller 還是要自己加印表機那條到自家 CSS / `<style>`。詳見 #10。
 
 ---
 
