@@ -193,3 +193,29 @@ paged.js 只看預設 @page (它在排版時 evaluate 的是 screen media)，瀏
   ```
 - 驗證 PDF 內容完整：用 Python `pypdf` extract 文字 vs source markdown 字數比對
 - Playwright 自動測：模擬使用者打開 modal、點下載、檢查 DOM 與輸出
+
+---
+
+## 10. (v0.1.2) `@media print { @page { margin: 0 } }` 寫在 paged.js stylesheet 會壞掉預覽
+
+**症狀：** 想用「預設 @page margin: 18mm + @media print @page margin: 0」雙重宣告區分 paged.js 排版邊距 vs 列印頁面邊距。但發現預覽的 `.pagedjs_page_content` 變成 148mm（整張 A5 寬），列印出來內文邊到邊沒邊距。
+
+**原因：** paged.js 解析時把 `@media print` 內的 @page 視為「更特殊規則」應用到預覽，所以預覽用的 margin 也變 0。
+
+**正解：** 把兩條 @page rule 分到兩個 stylesheet：
+- `PagedPolyfill.preview(_, [stylesheets], _)` 第二參數的 data: URL CSS：**只放預設** `@page { margin: 18mm 16mm 22mm }`
+- 印表機用的 `@media print { @page { margin: 0 } }` 寫到 document 的 bundled CSS / `<link>` / `<style>` — paged.js 不掃 `document.styleSheets`，所以它看不到，但印表機引擎會看到
+
+對應到 `@thematters/cjk-book-builder` API：
+
+```js
+import pdfCss from "@thematters/cjk-book-builder/styles/pdf.css?raw";
+
+// 給 paged.js
+await book.renderPdf({ container, css: pdfCss });
+
+// 給印表機 — 加在 document 任何 <style> / 你的全站 CSS 都行
+const printStyle = document.createElement("style");
+printStyle.textContent = `@media print { @page { size: A5 portrait; margin: 0 } }`;
+document.head.appendChild(printStyle);
+```

@@ -12,21 +12,29 @@
  *   - 章節後第一段不縮排
  * ───────────────────────────────────────────────────────────────── */
 
-/* ─── @page 雙重宣告 ─────────────────────────────────────────────
+/* ─── @page 設定 ─────────────────────────────────────────────
  *
- * 預設 @page 給 paged.js 排版用 — 它據此算 .pagedjs_page_content 內容區。
- * @media print { @page margin: 0 } 給瀏覽器列印引擎 — 否則它會在 paged.js
- * 已經是 148×210mm 的頁面上又多加 16mm 邊界、把右側 32mm 切掉。
+ * 這條給 paged.js 算 .pagedjs_page_content 內容區用。
+ *
+ * ⚠️ 重要踩雷 (v0.1.2 修正): 不能把 @media print { @page { margin: 0 } }
+ * 也寫在這個 stylesheet — paged.js 解析時會把 @media print 的 rule 視為
+ * 更特殊規則應用到預覽，內容區直接變 148mm (整張 A5 寬)，列印出來內文就
+ * 邊到邊沒邊距。
+ *
+ * 印表機用的 @page margin: 0 必須寫在「paged.js 看不到的地方」 — 也就是
+ * 透過 <link>/<style> 進到 document.styleSheets，不要進 PagedPolyfill.preview
+ * 第二參數的 stylesheets 陣列。caller 自己 import 這個 css 後，再
+ * 額外加：
+ *
+ *   @media print {
+ *     @page { size: A5 portrait; margin: 0; }
+ *   }
+ *
+ * 到自己的 bundled CSS / <style> 標籤就好。
  */
 @page {
   size: A5 portrait;
   margin: 18mm 16mm 22mm;
-}
-@media print {
-  @page {
-    size: A5 portrait;
-    margin: 0;
-  }
 }
 
 /* ─── .cjk-book-page reset ─────────────────────────────────
