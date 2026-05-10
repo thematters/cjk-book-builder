@@ -192,6 +192,8 @@ export const buildEpub = async (opts) => {
       }
     );
     c.hasRemote = hasRemote;
+    // EPUB 3 spec: chapter 內有 inline <svg> 必須在 manifest 加 properties="svg"
+    c.hasSvg = /<svg[\s>]/i.test(c.content);
     zip.file(`OEBPS/${c.href}`, c.content);
   }
 
@@ -238,7 +240,10 @@ export const buildEpub = async (opts) => {
   // 7. content.opf
   const chapterItems = chaptersCopy
     .map((c) => {
-      const props = c.hasRemote ? ` properties="remote-resources"` : "";
+      const propTokens = [];
+      if (c.hasRemote) propTokens.push("remote-resources");
+      if (c.hasSvg) propTokens.push("svg");
+      const props = propTokens.length ? ` properties="${propTokens.join(" ")}"` : "";
       return `    <item id="${c.id}" href="${escapeXml(c.href)}" media-type="application/xhtml+xml"${props}/>`;
     })
     .join("\n");
