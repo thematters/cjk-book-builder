@@ -1,0 +1,162 @@
+/* ─────────────────────────────────────────────────────────────────
+ * cjk-book-builder PDF stylesheet — paged.js A5 中文書版心
+ *
+ * 使用方式：以 string 形式傳給 createBook({ pdfCss: ... })，會被
+ * paged.js 從 stylesheets 參數讀進去 (它不掃 document.styleSheets)。
+ *
+ * 中文書版心慣例 (出版社規範)：
+ *   - A5 開本 148×210mm，B5 176×250mm，25K 148×210mm，32K 130×190mm
+ *   - 天頭 18mm / 訂口切口 16mm / 地腳 22mm (留頁碼空間)
+ *   - 內文 11pt 仿宋 / 楷書，行高 1.85
+ *   - 段首 text-indent: 2em (中文出版段首縮排兩個字寬)
+ *   - 章節後第一段不縮排
+ * ───────────────────────────────────────────────────────────────── */
+
+/* ─── @page 雙重宣告 ─────────────────────────────────────────────
+ *
+ * 預設 @page 給 paged.js 排版用 — 它據此算 .pagedjs_page_content 內容區。
+ * @media print { @page margin: 0 } 給瀏覽器列印引擎 — 否則它會在 paged.js
+ * 已經是 148×210mm 的頁面上又多加 16mm 邊界、把右側 32mm 切掉。
+ */
+@page {
+  size: A5 portrait;
+  margin: 18mm 16mm 22mm;
+}
+@media print {
+  @page {
+    size: A5 portrait;
+    margin: 0;
+  }
+}
+
+/* ─── .cjk-book-page reset ─────────────────────────────────
+ * 讓內容自然 flow，paged.js 才能正確斷頁 */
+.cjk-book-page {
+  width: auto;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  border: none;
+  background: transparent;
+  overflow: visible;
+  page-break-after: always;
+  break-after: page;
+  font-family: var(--cjk-book-font, "PingFang TC", "Noto Serif TC", "Source Han Serif TC", serif);
+  color: #2b2926;
+}
+
+/* paged.js 會把每個 chapter 包進它自己的 .pagedjs_page_content > anonymous div
+ * 結構裡。這條只是 fallback，預覽不靠 paged.js 時也能看 */
+.cjk-book-source > .cjk-book-page {
+  margin-bottom: 18px;
+}
+
+/* divider 上下置中 — JS post-process 會動態算 padding-top
+ * 個別 padding 而非 padding 短手，留 padding-top 給 JS 動 */
+.pagedjs_page_content .cjk-book-page {
+  width: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  overflow: visible !important;
+  page-break-after: always !important;
+  break-after: page !important;
+}
+.pagedjs_page_content .cjk-book-page:not(.cjk-book-page--divider) {
+  padding-top: 0 !important;
+}
+
+/* ─── 文字版心：標題 / 段落 / 引言 ─────────────────────── */
+.cjk-book-page h1,
+.cjk-book-page h2,
+.cjk-book-page h3 {
+  margin: 1.2em 0 0.5em;
+  font-weight: 600;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+.cjk-book-page h1 { font-size: 22pt; }
+.cjk-book-page h2 { font-size: 16pt; }
+.cjk-book-page h3 { font-size: 13pt; }
+
+.cjk-book-page p {
+  margin: 0 0 0.5em;
+  text-indent: 2em;
+  font-size: 11pt;
+  line-height: 1.85;
+  text-align: left;
+}
+.cjk-book-page p:first-child,
+.cjk-book-page h1 + p,
+.cjk-book-page h2 + p,
+.cjk-book-page h3 + p,
+.cjk-book-page figure + p,
+.cjk-book-page .cjk-book-eyebrow + p,
+.cjk-book-page .cjk-book-eyebrow + h1,
+.cjk-book-page .cjk-book-eyebrow + h2 {
+  text-indent: 0;
+}
+
+.cjk-book-page blockquote {
+  margin: 0.6em 2em;
+  padding: 0.4em 0.8em;
+  border-left: 2px solid #c9c4be;
+  break-inside: avoid;
+}
+
+.cjk-book-page .cjk-book-eyebrow {
+  display: block;
+  margin: 0 0 0.4em;
+  color: #045898;
+  font-size: 10pt;
+  letter-spacing: 0.06em;
+  text-indent: 0;
+}
+
+.cjk-book-fig {
+  margin: 8pt 0;
+  text-align: center;
+  break-inside: avoid;
+}
+
+/* ─── divider 頁 ───────────────────────────────────────── */
+.cjk-book-page--divider {
+  text-align: center;
+}
+
+/* ─── cover / closing ─────────────────────────────────── */
+.cjk-book-page--cover,
+.cjk-book-page--closing {
+  text-align: center;
+}
+
+/* ─── 頁碼 (JS post-process 注入到 .pagedjs_pagebox) ─── */
+.cjk-book-page-number {
+  position: absolute;
+  bottom: 8mm;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--cjk-book-font, "PingFang TC", serif);
+  font-size: 9pt;
+  font-weight: 400;
+  color: #6f6a63;
+  letter-spacing: 0.16em;
+  pointer-events: none;
+}
+
+/* ─── @media print 列印額外重設 ────────────────────── */
+@media print {
+  html, body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    color: #2b2926 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

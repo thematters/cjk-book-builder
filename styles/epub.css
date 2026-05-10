@@ -1,0 +1,109 @@
+/* ─────────────────────────────────────────────────────────────────
+ * cjk-book-builder EPUB stylesheet — 中文書版心
+ *
+ * 跟 PDF 不一樣：
+ *   - 不要 @page (EPUB 是 reflowable，閱讀器自己分頁)
+ *   - 字級用 em / rem (讓使用者調整)
+ *   - 一些 PDF 才需要的 page-break 規則保留為閱讀器 hint
+ * ───────────────────────────────────────────────────────────────── */
+
+@charset "UTF-8";
+
+body {
+  font-family: "PingFang TC", "Noto Serif TC", "Source Han Serif TC", serif;
+  line-height: 1.85;
+  margin: 0;
+  padding: 1em;
+  color: #2b2926;
+}
+
+h1, h2, h3 {
+  font-weight: 600;
+  margin: 1.2em 0 0.5em;
+  page-break-after: avoid;
+  break-after: avoid;
+}
+h1 { font-size: 1.6em; text-align: center; margin-top: 2em; }
+h2 { font-size: 1.3em; }
+h3 { font-size: 1.1em; }
+
+p {
+  margin: 0 0 0.4em;
+  text-indent: 2em;
+  text-align: left;
+}
+p:first-child,
+h1 + p, h2 + p, h3 + p,
+figure + p,
+.cjk-book-eyebrow + p, .cjk-book-eyebrow + h1, .cjk-book-eyebrow + h2 {
+  text-indent: 0;
+}
+
+.cjk-book-eyebrow {
+  display: block;
+  color: #666;
+  font-size: 0.9em;
+  letter-spacing: 0.06em;
+  text-indent: 0;
+  margin: 0 0 0.4em;
+}
+
+.center, .cjk-book-handle, .cjk-book-date, .cjk-book-meta {
+  text-align: center;
+  text-indent: 0;
+  color: #666;
+}
+
+blockquote {
+  margin: 0.6em 1.5em;
+  padding: 0.4em 0.8em;
+  border-left: 3px solid #c9c4be;
+  color: #555;
+}
+blockquote p {
+  text-indent: 0;
+}
+
+figure.cjk-book-fig {
+  margin: 1em 0;
+  text-align: center;
+}
+figure.cjk-book-fig img {
+  max-width: 100%;
+  height: auto;
+}
+figure.cjk-book-fig figcaption {
+  margin-top: 0.4em;
+  color: #888;
+  font-size: 0.85em;
+}
+
+/* 章節 section 以類別區分 */
+section.cjk-book-section--cover {
+  text-align: center;
+  margin-top: 4em;
+}
+section.cjk-book-section--cover h1 { font-size: 2em; }
+
+section.cjk-book-section--divider {
+  text-align: center;
+  margin-top: 3em;
+  page-break-before: always;
+  break-before: page;
+}
+section.cjk-book-section--divider h2 { font-size: 1.5em; margin: 0.6em 0; }
+
+section.cjk-book-section--closing {
+  text-align: center;
+  margin-top: 3em;
+  page-break-before: always;
+  break-before: page;
+}
+
+section.cjk-book-section--toc ol {
+  list-style: none;
+  padding: 0;
+}
+section.cjk-book-section--toc li {
+  margin: 0.3em 0;
+}

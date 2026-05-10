@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>cjk-book-builder demo</title>
+  <style>
+    body { margin: 0; font-family: -apple-system, "PingFang TC", sans-serif; padding: 24px; background: #f4f6fa; }
+    .demo-actions { display: flex; gap: 8px; margin-bottom: 16px; }
+    button { padding: 8px 14px; border: 1px solid #ccc; border-radius: 6px; background: white; cursor: pointer; }
+    button.primary { background: #045898; color: white; border-color: #045898; }
+    #preview { background: white; padding: 24px; min-height: 400px; }
+  </style>
+</head>
+<body>
+  <h1>cjk-book-builder demo</h1>
+  <p>把右下兩個 chapter 同時做成 PDF + EPUB。</p>
+
+  <div class="demo-actions">
+    <button id="render-pdf">產生 PDF 預覽</button>
+    <button id="print-pdf" class="primary">列印 / 下載 PDF</button>
+    <button id="download-epub" class="primary">下載 EPUB</button>
+  </div>
+
+  <div id="preview"></div>
+
+  <script type="module">
+    import { createBook, mdToHtml } from "../src/index.js";
+
+    // 兩支 stylesheet (用 fetch 讀，瀏覽器原生支援 CSS modules 還沒普及)
+    const [pdfCss, epubCss] = await Promise.all([
+      fetch("../styles/pdf.css").then((r) => r.text()),
+      fetch("../styles/epub.css").then((r) => r.text()),
+    ]);
+
+    const sampleMd = `回家那天我推開門就聞到了那個味道。
+
+外婆站在廚房，手裡拿著木勺攪著鍋子。她聽到我進門，只回頭一笑就繼續攪。
+
+> 「孩子，回來啦。」
+
+陽光從窗戶斜斜地照進來，把廚房的水汽染成金色。`;
+
+    const book = createBook({
+      metadata: {
+        title: "示範小書",
+        author: "@demo",
+        publisher: "Matters · 自由寫",
+      },
+      pdfCss,
+      epubCss,
+      chapters: [
+        {
+          kind: "cover",
+          id: "cover",
+          title: "封面",
+          content: `<p class="cjk-book-eyebrow">cjk-book-builder demo</p>
+<h1>示範小書</h1>
+<p class="cjk-book-handle">@demo</p>`,
+        },
+        {
+          kind: "divider",
+          id: "ch1-divider",
+          title: "第一章",
+          content: `<p class="cjk-book-eyebrow">第 01 站</p>
+<h2>外婆的廚房</h2>
+<p class="cjk-book-meta">在這期，你寫了 1 篇</p>`,
+        },
+        {
+          kind: "article",
+          id: "ch1-art01",
+          title: "外婆的廚房",
+          content: `<p class="cjk-book-eyebrow">2026 年 8 月 · 七日書</p>
+<h2>外婆的廚房</h2>
+${mdToHtml(sampleMd, { output: "html" })}`,
+        },
+      ],
+    });
+
+    document.getElementById("render-pdf").onclick = async () => {
+      const r = await book.renderPdf({ container: document.getElementById("preview") });
+      console.log("Rendered", r.pages, "pages");
+    };
+    document.getElementById("print-pdf").onclick = () => book.printPdf();
+    document.getElementById("download-epub").onclick = async (e) => {
+      const btn = e.currentTarget;
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "打包中…";
+      try {
+        const blob = await book.buildEpub({
+          onImageProgress: (d, t) => (btn.textContent = `下載圖片 ${d} / ${t}…`),
+        });
+        book.download(blob, "示範小書.epub");
+      } catch (err) {
+        alert("失敗：" + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    };
+  </script>
+</body>
+</html>

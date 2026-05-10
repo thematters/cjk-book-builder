@@ -1,0 +1,51 @@
+{
+  "name": "@thematters/cjk-book-builder",
+  "version": "0.1.0",
+  "description": "中文書版心 client-side PDF (paged.js) + EPUB 3 builder. 把任意 HTML 內容變成中文版心的「書」，同時支援 PDF 與 EPUB 兩種輸出。",
+  "license": "MIT",
+  "type": "module",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./pdf": "./src/pdf.js",
+    "./epub": "./src/epub.js",
+    "./markdown": "./src/markdown.js",
+    "./sanitize": "./src/sanitize.js",
+    "./styles/pdf.css": "./styles/pdf.css",
+    "./styles/epub.css": "./styles/epub.css"
+  },
+  "files": [
+    "src",
+    "styles",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "epub",
+    "epub3",
+    "pdf",
+    "pagedjs",
+    "chinese",
+    "cjk",
+    "typography",
+    "book",
+    "matters"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thematters/cjk-book-builder.git"
+  },
+  "author": "Matters Lab <hi@matters.town>",
+  "homepage": "https://github.com/thematters/cjk-book-builder",
+  "bugs": "https://github.com/thematters/cjk-book-builder/issues",
+  "peerDependencies": {
+    "jszip": "^3.10.0"
+  },
+  "peerDependenciesMeta": {
+    "jszip": { "optional": true }
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
