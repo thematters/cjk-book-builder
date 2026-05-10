@@ -132,6 +132,9 @@ export const embedRemoteImages = async (chapters, zip, onProgress, transformUrl 
  * @property {string} [css] 內文 stylesheet (寫入 styles/book.css)
  * @property {(done: number, total: number) => void} [onImageProgress]
  * @property {(url: string) => string} [transformImageUrl]
+ * @property {{ blob: Blob, mediaType?: string, filename?: string }} [coverImage]
+ *   選填封面圖 — 寫入 OEBPS/<filename>，manifest 加 properties="cover-image"。
+ *   閱讀器 (Apple Books / Kobo) 會用這張圖當書封顯示。
  */
 
 /**
@@ -140,7 +143,7 @@ export const embedRemoteImages = async (chapters, zip, onProgress, transformUrl 
  * @returns {Promise<Blob>}
  */
 export const buildEpub = async (opts) => {
-  const { metadata, chapters, css, onImageProgress, transformImageUrl } = opts;
+  const { metadata, chapters, css, onImageProgress, transformImageUrl, coverImage } = opts;
   if (!metadata?.title) throw new Error("buildEpub: metadata.title required");
   if (!chapters?.length) throw new Error("buildEpub: chapters required");
 
@@ -248,6 +251,17 @@ export const buildEpub = async (opts) => {
     .join("\n");
   const spineItems = chaptersCopy.map((c) => `    <itemref idref="${c.id}"/>`).join("\n");
 
+  // 5b. cover image (optional) — Apple Books / Kobo 用這張當書封顯示
+  let coverManifestItem = "";
+  if (coverImage?.blob) {
+    const ext = (coverImage.mediaType || "image/png").split("/")[1] || "png";
+    const safeExt = ext === "jpeg" ? "jpg" : ext;
+    const filename = coverImage.filename || `cover.${safeExt}`;
+    const mediaType = coverImage.mediaType || "image/png";
+    zip.file(`OEBPS/${filename}`, coverImage.blob);
+    coverManifestItem = `    <item id="cover-image" href="${escapeXml(filename)}" media-type="${mediaType}" properties="cover-image"/>\n`;
+  }
+
   const publisherMeta = metadata.publisher
     ? `\n    <dc:publisher>${escapeXml(metadata.publisher)}</dc:publisher>`
     : "";
@@ -268,6 +282,7 @@ export const buildEpub = async (opts) => {
       `    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>\n` +
       `    <item id="nav" href="toc.xhtml" media-type="application/xhtml+xml" properties="nav"/>\n` +
       (css ? `    <item id="css" href="styles/book.css" media-type="text/css"/>\n` : "") +
+      coverManifestItem +
       `${chapterItems}\n` +
       (imageItems ? imageItems + "\n" : "") +
       `  </manifest>\n` +
